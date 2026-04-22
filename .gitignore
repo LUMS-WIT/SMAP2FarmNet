@@ -1,0 +1,16 @@
+training
+results
+# checkpoints
+temp*
+.Rproj.user
+.$*
+.RData
+.Rhistory
+*.txt
+*.Rproj
+*.tif*
+*.csv
+# *.pkl
+# *.pt
+__pycache__*
+.vscode*
