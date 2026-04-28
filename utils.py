@@ -705,81 +705,163 @@ def format_metrics_text(metrics_dict, include_rmse=True):
 
 
 # def plot_scatter_density(obs, preds, title='Observed vs Predicted', metrics_text=None, out_path=None):
+# def plot_scatter_density(
+#     obs,
+#     preds,
+#     title='Observed vs Predicted',
+#     metrics_dict=None,
+#     include_rmse=True,
+#     out_path=None
+# ):
+
+#     # Compute density
+#     xy = np.vstack([obs, preds])
+#     z = gaussian_kde(xy)(xy)
+
+#     # Normalize to 0–100 for nicer colorbar ticks
+#     z_norm = 100 * (z - z.min()) / (z.max() - z.min())
+
+#     fig = plt.figure(figsize=(7,7))
+#     ax = plt.gca()
+
+#     # Scatter with density coloring
+#     sc = ax.scatter(obs, preds, c=z_norm, s=30, edgecolors='none', cmap='turbo')
+
+#     # 1:1 line
+#     mn = min(np.nanmin(obs), np.nanmin(preds))
+#     mx = max(np.nanmax(obs), np.nanmax(preds))
+#     ax.plot([mn, mx], [mn, mx], 'r--')
+
+#     ax.set_xlabel('Observed soil moisture (m³/m³)')
+#     ax.set_ylabel('Predicted soil moisture (m³/m³)')
+#     ax.set_title(title)
+
+#     # Metrics box
+#     # if metrics_text:
+#     #     fig.text(0.67, 0.12, metrics_text, fontsize=12,
+#     #              bbox=dict(facecolor='white', edgecolor='black'))
+
+#     # Metrics box (with units)
+#     if metrics_dict:
+#         metrics_text = format_metrics_text(
+#             metrics_dict,
+#             include_rmse=include_rmse
+#         )
+
+#         fig.text(
+#             0.67, 0.12,
+#             metrics_text,
+#             fontsize=12,
+#             bbox=dict(facecolor='white', edgecolor='black')
+#         )
+
+
+#     # ---------------------------------------------------------
+#     # Small inset colorbar inside the plot
+#     # ---------------------------------------------------------
+#     cax = inset_axes(ax,
+#                      width="28%",   # width relative to plot
+#                      height="3%",   # height relative to plot
+#                      loc='upper right',
+#                      borderpad=1.0)
+
+#     cb = plt.colorbar(sc, cax=cax, orientation='horizontal')
+
+#     # Show only 0 and 100 ticks
+#     cb.set_ticks([0, 100])
+#     cb.set_ticklabels(['0', '100'])
+#     cb.ax.tick_params(labelsize=8)
+#     cb.set_label("Point Density (scaled)", fontsize=8)
+
+#     ax.grid(True)
+#     plt.tight_layout()
+
+#     # Save if needed
+#     if out_path:
+#         plt.savefig(out_path, dpi=300, bbox_inches='tight')
+
+#     plt.show()
+
+
 def plot_scatter_density(
-    obs,
-    preds,
-    title='Observed vs Predicted',
-    metrics_dict=None,
-    include_rmse=True,
-    out_path=None
+    obs, 
+    preds, 
+    title='Observed vs Predicted', 
+    metrics_dict=None, 
+    include_rmse=True, 
+    out_path=None,
+    min_value=0.01   # New parameter: minimum value to plot
 ):
-
-    # Compute density
-    xy = np.vstack([obs, preds])
+    import numpy as np
+    from scipy.stats import gaussian_kde
+    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    import matplotlib.pyplot as plt
+    
+    # Convert to numpy arrays if not already
+    obs = np.asarray(obs)
+    preds = np.asarray(preds)
+    
+    # === Filter: Keep only values > min_value ===
+    mask = (obs > min_value) & (preds > min_value)
+    
+    if mask.sum() == 0:
+        raise ValueError(f"No data points remain after filtering values > {min_value}")
+    
+    obs_filtered = obs[mask]
+    preds_filtered = preds[mask]
+    
+    print(f"Plotting {mask.sum():,} out of {len(obs):,} points (values > {min_value})")
+    
+    # Compute density on filtered data
+    xy = np.vstack([obs_filtered, preds_filtered])
     z = gaussian_kde(xy)(xy)
-
-    # Normalize to 0–100 for nicer colorbar ticks
+    
+    # Normalize density to 0–100 for nicer colorbar
     z_norm = 100 * (z - z.min()) / (z.max() - z.min())
-
-    fig = plt.figure(figsize=(7,7))
+    
+    fig = plt.figure(figsize=(7, 7))
     ax = plt.gca()
-
+    
     # Scatter with density coloring
-    sc = ax.scatter(obs, preds, c=z_norm, s=30, edgecolors='none', cmap='turbo')
-
-    # 1:1 line
-    mn = min(np.nanmin(obs), np.nanmin(preds))
-    mx = max(np.nanmax(obs), np.nanmax(preds))
-    ax.plot([mn, mx], [mn, mx], 'r--')
-
+    sc = ax.scatter(obs_filtered, preds_filtered, 
+                    c=z_norm, 
+                    s=30, 
+                    edgecolors='none', 
+                    cmap='turbo')
+    
+    # 1:1 line - use filtered min/max
+    mn = min(np.nanmin(obs_filtered), np.nanmin(preds_filtered))
+    mx = max(np.nanmax(obs_filtered), np.nanmax(preds_filtered))
+    ax.plot([mn, mx], [mn, mx], 'r--', linewidth=1.5, label='1:1 line')
+    
     ax.set_xlabel('Observed soil moisture (m³/m³)')
     ax.set_ylabel('Predicted soil moisture (m³/m³)')
     ax.set_title(title)
-
-    # Metrics box
-    # if metrics_text:
-    #     fig.text(0.67, 0.12, metrics_text, fontsize=12,
-    #              bbox=dict(facecolor='white', edgecolor='black'))
-
-    # Metrics box (with units)
+    
+    # Metrics box (only on filtered data!)
     if metrics_dict:
-        metrics_text = format_metrics_text(
-            metrics_dict,
-            include_rmse=include_rmse
-        )
-
-        fig.text(
-            0.67, 0.12,
-            metrics_text,
-            fontsize=12,
-            bbox=dict(facecolor='white', edgecolor='black')
-        )
-
-
-    # ---------------------------------------------------------
-    # Small inset colorbar inside the plot
-    # ---------------------------------------------------------
-    cax = inset_axes(ax,
-                     width="28%",   # width relative to plot
-                     height="3%",   # height relative to plot
-                     loc='upper right',
-                     borderpad=1.0)
-
+        # Important: You should recompute metrics on filtered data if needed
+        metrics_text = format_metrics_text(metrics_dict, include_rmse=include_rmse)
+        fig.text(0.67, 0.12, metrics_text, fontsize=12,
+                 bbox=dict(facecolor='white', edgecolor='black'))
+    
+    # Small inset colorbar
+    cax = inset_axes(ax, width="28%", height="3%", 
+                     loc='upper right', borderpad=1.0)
     cb = plt.colorbar(sc, cax=cax, orientation='horizontal')
-
-    # Show only 0 and 100 ticks
     cb.set_ticks([0, 100])
     cb.set_ticklabels(['0', '100'])
     cb.ax.tick_params(labelsize=8)
     cb.set_label("Point Density (scaled)", fontsize=8)
-
-    ax.grid(True)
+    
+    ax.grid(True, alpha=0.3)
+    ax.legend(loc='lower right')
+    
     plt.tight_layout()
-
-    # Save if needed
+    
     if out_path:
         plt.savefig(out_path, dpi=300, bbox_inches='tight')
-
+    
     plt.show()
 
 

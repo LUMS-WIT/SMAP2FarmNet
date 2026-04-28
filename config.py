@@ -2,8 +2,8 @@
 
 import torch
 
-MODE = "comb" # "PM", "comb", "AM"
-SET = "complete" # "holdout", "complete"
+MODE = "AM" # "PM", "comb", "AM"
+SET = "holdout" # "holdout", "complete"
 
 # ---------------- DATA ----------------
 if SET == "holdout":
