@@ -321,4 +321,4 @@ The soil moisture sensor data used for this research is under the ownership of C
 
 ## Contact
 
-For questions or collaborations, please contact the the authors via [email](22060019@lums.edu.pk).
+For questions or collaborations, please contact the the authors via [LinkdIn] (www.linkedin.com/in/hamza-rafique-ac952) or [email](22060019@lums.edu.pk).
